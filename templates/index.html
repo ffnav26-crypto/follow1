@@ -11,27 +11,72 @@
         <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Instagram Follower Tool</h1>
         <form id="followForm" class="space-y-4">
             <div>
-                <label for="target_username" class="block text-sm font-medium text-gray-700">Target Username</label>
+                <label for="target_username" class="block text-sm font-medium text-gray-700">Target Username to Follow</label>
                 <input type="text" id="target_username" name="target_username" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="e.g. instagram">
             </div>
+
+            <div class="pt-4 border-t border-gray-200">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Authentication Method</label>
+                <div class="space-y-2">
+                    <div class="flex items-center">
+                        <input id="method_api" name="auth_method" type="radio" value="api" checked
+                            class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                        <label for="method_api" class="ml-3 block text-sm text-gray-700">Use Random Account from API</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="method_session" name="auth_method" type="radio" value="manual_session"
+                            class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                        <label for="method_session" class="ml-3 block text-sm text-gray-700">Manual Session ID</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="method_credentials" name="auth_method" type="radio" value="manual_credentials"
+                            class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                        <label for="method_credentials" class="ml-3 block text-sm text-gray-700">Manual Username/Password</label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="session_input" class="hidden">
+                <label for="session_id" class="block text-sm font-medium text-gray-700">Session ID</label>
+                <input type="text" id="session_id" name="session_id"
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Enter sessionid cookie value">
+            </div>
+
+            <div id="credentials_input" class="hidden space-y-2">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input type="text" id="username" name="username"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="password" name="password"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+            </div>
+
             <button type="submit"
                 class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Follow
+                Start Task
             </button>
         </form>
-        <div id="message" class="mt-4 text-center text-sm"></div>
-
-        <div class="mt-8">
-            <h2 class="text-lg font-semibold mb-2 text-gray-700">Live Logs</h2>
-            <div id="logs" class="bg-black text-green-400 p-4 rounded-md font-mono text-xs h-64 overflow-y-auto whitespace-pre-wrap">
-Waiting for task...
-            </div>
-        </div>
     </div>
 
     <script>
         const logsDiv = document.getElementById('logs');
+        const sessionInput = document.getElementById('session_input');
+        const credentialsInput = document.getElementById('credentials_input');
+        
+        // Handle input visibility
+        document.querySelectorAll('input[name="auth_method"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                sessionInput.classList.toggle('hidden', e.target.value !== 'manual_session');
+                credentialsInput.classList.toggle('hidden', e.target.value !== 'manual_credentials');
+            });
+        });
         
         async function updateLogs() {
             try {
