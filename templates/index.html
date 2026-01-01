@@ -21,9 +21,34 @@
             </button>
         </form>
         <div id="message" class="mt-4 text-center text-sm"></div>
+
+        <div class="mt-8">
+            <h2 class="text-lg font-semibold mb-2 text-gray-700">Live Logs</h2>
+            <div id="logs" class="bg-black text-green-400 p-4 rounded-md font-mono text-xs h-64 overflow-y-auto whitespace-pre-wrap">
+Waiting for task...
+            </div>
+        </div>
     </div>
 
     <script>
+        const logsDiv = document.getElementById('logs');
+        
+        async function updateLogs() {
+            try {
+                const response = await fetch('/logs');
+                const logs = await response.json();
+                if (logs.length > 0) {
+                    logsDiv.textContent = logs.join('\n');
+                    logsDiv.scrollTop = logsDiv.scrollHeight;
+                }
+            } catch (e) {
+                console.error("Failed to fetch logs", e);
+            }
+        }
+
+        // Poll logs every 2 seconds
+        setInterval(updateLogs, 2000);
+
         document.getElementById('followForm').onsubmit = async (e) => {
             e.preventDefault();
             const messageDiv = document.getElementById('message');
