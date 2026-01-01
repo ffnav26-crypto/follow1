@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">Admin Dashboard</h1>
+            <a href="/admin/toggle_pause" class="px-4 py-2 rounded text-white {{ 'bg-green-500' if is_paused else 'bg-yellow-500' }}">
+                {{ 'Resume Bot' if is_paused else 'Pause Bot' }}
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded shadow">
+                <p class="text-gray-500">Total Accounts</p>
+                <p class="text-2xl font-bold">{{ acc_count }}</p>
+            </div>
+            <div class="bg-white p-6 rounded shadow">
+                <p class="text-gray-500">Active Accounts</p>
+                <p class="text-2xl font-bold text-green-600">{{ active_count }}</p>
+            </div>
+            <div class="bg-white p-6 rounded shadow">
+                <p class="text-gray-500">Blacklisted</p>
+                <p class="text-2xl font-bold text-red-600">{{ acc_count - active_count }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded shadow mb-8">
+            <h2 class="text-xl font-bold mb-4 text-gray-700">Add Account Manually</h2>
+            <form id="addAccountForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Username</label>
+                        <input type="text" name="username" required class="mt-1 block w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Auth Type</label>
+                        <select name="auth_type" id="auth_type" class="mt-1 block w-full p-2 border rounded">
+                            <option value="session">Session ID</option>
+                            <option value="credentials">Username/Password</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="session_field">
+                    <label class="block text-sm font-medium text-gray-700">Session ID</label>
+                    <input type="text" name="session_id" class="mt-1 block w-full p-2 border rounded">
+                </div>
+                <div id="password_field" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" name="password" class="mt-1 block w-full p-2 border rounded">
+                </div>
+                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-full md:w-auto">
+                    Login & Add Account
+                </button>
+            </form>
+            <div id="addMessage" class="mt-2 text-sm"></div>
+        </div>
+
+        <div class="bg-white p-6 rounded shadow mb-8">
+            <h2 class="text-xl font-bold mb-4">API Sources</h2>
+            <form action="/admin/source/add" method="POST" class="mb-4 flex gap-2">
+                <input type="url" name="url" placeholder="API URL" class="flex-1 p-2 border rounded" required>
+                <button class="bg-blue-500 text-white px-4 py-2 rounded">Add Source</button>
+            </form>
+            <table class="w-full text-left">
+                <thead><tr><th>URL</th><th>Fetched</th><th>Actions</th></tr></thead>
+                <tbody>
+                    {% for source in sources %}
+                    <tr class="border-t">
+                        <td class="py-2">{{ source.url }}</td>
+                        <td>{{ source.fetched_count }}</td>
+                        <td><a href="/admin/source/delete/{{ loop.index0 }}" class="text-red-500">Delete</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bg-white p-6 rounded shadow">
+            <h2 class="text-xl font-bold mb-4">Activity Logs</h2>
+            <div id="adminLogs" class="bg-black text-green-400 p-4 rounded-md font-mono text-xs h-64 overflow-y-auto whitespace-pre-wrap mb-8">
+Waiting for activity...
+            </div>
+            
+            <h2 class="text-xl font-bold mb-4">Recent Activity</h2>
+            <table class="w-full text-left">
+                <thead><tr><th>Target</th><th>Status</th><th>Time</th></tr></thead>
+                <tbody>
+                    {% for stat in stats %}
+                    <tr class="border-t">
+                        <td class="py-2">{{ stat.target_username }}</td>
+                        <td><span class="px-2 rounded {{ 'bg-green-100 text-green-700' if stat.success else 'bg-red-100 text-red-700' }}">{{ 'Success' if stat.success else 'Failed' }}</span></td>
+                        <td>{{ stat.timestamp[:16].replace('T', ' ') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        const logsDiv = document.getElementById('adminLogs');
+        const authType = document.getElementById('auth_type');
+        const sessionField = document.getElementById('session_field');
+        const passwordField = document.getElementById('password_field');
+
+        authType.onchange = (e) => {
+            sessionField.classList.toggle('hidden', e.target.value !== 'session');
+            passwordField.classList.toggle('hidden', e.target.value !== 'credentials');
+        };
+
+        async function updateLogs() {
+            try {
+                const response = await fetch('/logs');
+                const logs = await response.json();
+                if (logs.length > 0) {
+                    logsDiv.textContent = logs.join('\n');
+                    logsDiv.scrollTop = logsDiv.scrollHeight;
+                }
+            } catch (e) {}
+        }
+        setInterval(updateLogs, 2000);
+
+        document.getElementById('addAccountForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const msg = document.getElementById('addMessage');
+            msg.textContent = 'Logging in...';
+            msg.className = 'mt-2 text-sm text-blue-600';
+            
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/admin/account/add', { method: 'POST', body: formData });
+                const data = await response.json();
+                msg.textContent = data.message;
+                msg.className = `mt-2 text-sm ${data.success ? 'text-green-600' : 'text-red-600'}`;
+            } catch (error) {
+                msg.textContent = 'Error adding account';
+                msg.className = 'mt-2 text-sm text-red-600';
+            }
+        };
+    </script>
+</body>
+</html>
