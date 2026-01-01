@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Follower Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Instagram Follower Tool</h1>
+        <form id="followForm" class="space-y-4">
+            <div>
+                <label for="target_username" class="block text-sm font-medium text-gray-700">Target Username</label>
+                <input type="text" id="target_username" name="target_username" required
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            <button type="submit"
+                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Follow
+            </button>
+        </form>
+        <div id="message" class="mt-4 text-center text-sm"></div>
+    </div>
+
+    <script>
+        document.getElementById('followForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = 'Processing...';
+            messageDiv.className = 'mt-4 text-center text-sm text-blue-600';
+
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/follow', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                messageDiv.textContent = data.message;
+                messageDiv.className = `mt-4 text-center text-sm ${data.success ? 'text-green-600' : 'text-red-600'}`;
+            } catch (error) {
+                messageDiv.textContent = 'An error occurred';
+                messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+            }
+        };
+    </script>
+</body>
+</html>
